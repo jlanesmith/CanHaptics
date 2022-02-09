@@ -46,6 +46,13 @@ long              baseFrameRate                       = 120;
 
 /* elements definition *************************************************************************************************/
 
+/* Jonathan's elements */
+boolean aboveString = true;
+float strumDistance = 0.01;
+float stringLocation = 0.08;
+int stringThickness = 300; // 200 for twang, 300 for more plucky
+
+
 /* Screen and world setup parameters */
 float             pixelsPerMeter                      = 4000.0;
 float             radsPerDegree                       = 0.01745;
@@ -62,7 +69,7 @@ float             rEE                                 = 0.006;
 float             kWall                               = 450;
 PVector           fWall                               = new PVector(0, 0);
 PVector           penWall                             = new PVector(0, 0);
-PVector           posWall                             = new PVector(0.01, 0.10);
+PVector           posWall                             = new PVector(0.01, stringLocation - rEE);
 
 
 
@@ -86,6 +93,7 @@ final int         worldPixelHeight                    = 650;
 /* graphical elements */
 PShape pGraph, joint, endEffector;
 PShape wall;
+
 /* end elements definition *********************************************************************************************/ 
 
 
@@ -175,17 +183,28 @@ class SimulationThread implements Runnable{
       angles.set(widgetOne.get_device_angles()); 
       posEE.set(widgetOne.get_device_position(angles.array()));
       posEE.set(device_to_graphics(posEE)); 
-      
-      
+            
       /* haptic wall force calculation */
       fWall.set(0, 0);
       
-      penWall.set(0, (posWall.y - (posEE.y + rEE)));
+      //penWall.set(0, (posWall.y - (posEE.y + rEE)));
+      println(posEE.y, aboveString);
       
-      if(penWall.y < 0){
-        fWall = fWall.add(penWall.mult(-kWall));  
+      if (aboveString && posEE.y > stringLocation + strumDistance/2) {
+        aboveString = false;
+      } else if (!aboveString && posEE.y < stringLocation - strumDistance/2) {
+        aboveString = true;
       }
       
+      if(aboveString && posEE.y > stringLocation - strumDistance){
+        penWall.set(0, posEE.y - stringLocation + strumDistance);
+        fWall = fWall.add(penWall.mult(stringThickness));  
+      }
+      else if (!aboveString && posEE.y < stringLocation + strumDistance) {
+        penWall.set(0, stringLocation + strumDistance - posEE.y);        
+        fWall = fWall.add(penWall.mult(-stringThickness));        
+      }
+ //<>//
       fEE = (fWall.copy()).mult(-1);
       fEE.set(graphics_to_device(fEE));
       /* end haptic wall force calculation */
