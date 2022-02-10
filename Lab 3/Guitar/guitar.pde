@@ -47,10 +47,14 @@ long              baseFrameRate                       = 120;
 /* elements definition *************************************************************************************************/
 
 /* Jonathan's elements */
-boolean aboveString = true;
-float strumDistance = 0.01;
-float stringLocation = 0.08;
-int stringThickness = 300; // 200 for twang, 300 for more plucky
+
+MusicString[] strings = new MusicString[4];
+
+float vibratoLine = 0.11;
+float vibratoRadius = 0.01;
+float vibratoMaxIntensity = 6;
+float vibratoCounter = 0;
+int vibratoFrequency = 5; // in Hz
 
 
 /* Screen and world setup parameters */
@@ -66,11 +70,7 @@ float             L                                   = 0.09;
 float             rEE                                 = 0.006;
 
 /* virtual wall parameter  */
-float             kWall                               = 450;
 PVector           fWall                               = new PVector(0, 0);
-PVector           penWall                             = new PVector(0, 0);
-PVector           posWall                             = new PVector(0.01, stringLocation - rEE);
-
 
 
 /* generic data for a 2DOF device */
@@ -138,11 +138,12 @@ void setup(){
   /* create pantagraph graphics */
   create_pantagraph();
   
-  /* create wall graphics */
-  wall = create_wall(posWall.x-0.2, posWall.y+rEE, posWall.x+0.2, posWall.y+rEE);
-  wall.setStroke(color(0));
-  
-  
+  /* create string graphics */
+  strings[0] = new MusicString(0.01, 0.10, 300);
+  strings[1] = new MusicString(0.01, 0.12, 300);
+  strings[2] = new MusicString(0.01, 0.08, 150);
+  strings[3] = new MusicString(0.01, 0.06, 300);
+
   
   /* setup framerate speed */
   frameRate(baseFrameRate);
@@ -187,22 +188,31 @@ class SimulationThread implements Runnable{
       /* haptic wall force calculation */
       fWall.set(0, 0);
       
-      //penWall.set(0, (posWall.y - (posEE.y + rEE)));
-      println(posEE.y, aboveString);
+      //println(posEE.y, aboveString);
       
-      if (aboveString && posEE.y > stringLocation + strumDistance/2) {
-        aboveString = false;
-      } else if (!aboveString && posEE.y < stringLocation - strumDistance/2) {
-        aboveString = true;
+      /* String calculations */
+      for (MusicString string : strings) {
+        if (string.aboveString && posEE.y > string.stringLocation + string.strumDistance/2) {
+          string.aboveString = false;
+        } else if (!string.aboveString && posEE.y < string.stringLocation - string.strumDistance/2) {
+          string.aboveString = true;
+        }
+        
+        if(string.aboveString && posEE.y > string.stringLocation - string.strumDistance){
+          fWall = fWall.add(new PVector(0, (posEE.y - string.stringLocation + string.strumDistance) * string.stringThickness));  
+        }
+        else if (!string.aboveString && posEE.y < string.stringLocation + string.strumDistance) {
+          fWall = fWall.add(new PVector(0, (string.stringLocation + string.strumDistance - posEE.y) * -string.stringThickness));  
+        }
       }
       
-      if(aboveString && posEE.y > stringLocation - strumDistance){
-        penWall.set(0, posEE.y - stringLocation + strumDistance);
-        fWall = fWall.add(penWall.mult(stringThickness));  
-      }
-      else if (!aboveString && posEE.y < stringLocation + strumDistance) {
-        penWall.set(0, stringLocation + strumDistance - posEE.y);        
-        fWall = fWall.add(penWall.mult(-stringThickness));        
+      /* Vibrato calcluations */
+      vibratoCounter = (vibratoCounter + 1) % (1000/vibratoFrequency);
+      float vibratoProgress = vibratoCounter / (1000/vibratoFrequency); // Percent through cycle
+      float vibratoIntensity = ((posEE.x + 0.09)/0.18) * vibratoMaxIntensity; // x goes from -0.09 to 0.09
+      float vibratoForce = (vibratoProgress < 0.5) ? vibratoIntensity * (1 - vibratoProgress*4) : vibratoIntensity * (-3 + vibratoProgress*4); // triangle wave
+      if (posEE.y > vibratoLine - vibratoRadius && posEE.y < vibratoLine + vibratoRadius) {
+        fWall = fWall.add(new PVector(0, vibratoForce));
       }
  //<>//
       fEE = (fWall.copy()).mult(-1);
@@ -277,7 +287,9 @@ void update_animation(float th1, float th2, float xE, float yE){
   
   shape(pGraph);
   shape(joint);
-  shape(wall);
+  for (MusicString string : strings) {
+    shape(string.wall);
+  }
   
   
   translate(xE, yE);
@@ -294,11 +306,21 @@ PVector graphics_to_device(PVector graphicsFrame){
   return graphicsFrame.set(-graphicsFrame.x, graphicsFrame.y);
 }
 
-
-
 /* end helper functions section ****************************************************************************************/
 
-
-
-
+class MusicString {
+  boolean aboveString = true;
+  float strumDistance;
+  float stringLocation;
+  int stringThickness; // 200 for twang, 300 for more plucky
+  PShape wall;
+ 
+  MusicString (float distance, float location, int thickness) {
+    strumDistance = distance;
+    stringLocation = location;
+    stringThickness = thickness;
+    wall = create_wall(-0.2, location, 0.2, location);
+    wall.setStroke(color(0));
+  }
+}
  
