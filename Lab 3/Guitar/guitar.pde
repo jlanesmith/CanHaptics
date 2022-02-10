@@ -52,9 +52,9 @@ MusicString[] strings = new MusicString[4];
 
 float vibratoLine = 0.11;
 float vibratoRadius = 0.01;
-float vibratoMaxIntensity = 6;
+float vibratoMaxIntensity = 8;
 float vibratoCounter = 0;
-int vibratoFrequency = 5; // in Hz
+int vibratoPeriod = 200; // in Hz
 
 
 /* Screen and world setup parameters */
