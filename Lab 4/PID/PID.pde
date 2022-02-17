@@ -26,7 +26,7 @@ private final ScheduledExecutorService scheduler      = Executors.newScheduledTh
 
 ControlP5 cp5;
 
-// Jonathan's new variables
+// Jonathan's new variablescd doc
 boolean followCircle = false;
 boolean randomLooptime = true;
 
