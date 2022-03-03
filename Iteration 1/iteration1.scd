@@ -1,5 +1,5 @@
 NetAddr.langPort;
-
+thisProcess.openUDPPort(57120); // attempt to open 1121
 
 (
 OSCdef.new(
@@ -10,7 +10,7 @@ OSCdef.new(
 	},
 	'/hapstrument'
 );
-)]
+)
 
 s.boot;
 

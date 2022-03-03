@@ -398,17 +398,16 @@ PVector graphics_to_device(PVector graphicsFrame){
 
 class MusicString {
   boolean aboveString = true;
-  float strumDistance = 0.01;
+  float strumDistance = 0.005;
   boolean isVertical = false;
   float lowEnd = -0.2;
   float highEnd = 0.2;
-  int thickness = 200; // 200 for twang, 300 for more plucky
+  int thickness = 400; // 200 for twang, 300 for more plucky
   float location;
   PShape wall;
  
   MusicString (boolean vertical, float stringLowEnd, float stringHighEnd, float stringLocation) {
     isVertical = vertical;
-    thickness = vertical ? 200 : 200;
     lowEnd = stringLowEnd;
     highEnd = stringHighEnd;
     location = stringLocation;
