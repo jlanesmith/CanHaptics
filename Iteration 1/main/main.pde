@@ -16,6 +16,8 @@
 import processing.serial.*;
 import static java.util.concurrent.TimeUnit.*;
 import java.util.concurrent.*;
+import oscP5.*;
+import netP5.*;
 /* end library imports *************************************************************************************************/  
 
 
@@ -80,6 +82,10 @@ final int         worldPixelHeight                    = 650;
 /* graphical elements */
 PShape pGraph, joint, endEffector;
 PShape wall;
+
+/* Jonathan's stuff */
+OscP5 oscP5;
+NetAddress myRemoteLocation;
 
 MusicString[] strings = new MusicString[34];
 float pianoTop = 0.06;
@@ -179,6 +185,9 @@ void setup(){
   strings[31] = new MusicString(true, pianoTop, pianoMid, 0.053);
   strings[32] = new MusicString(false, 0.087, 0.075, pianoMid);
   strings[33] = new MusicString(false, 0.065, 0.053, pianoMid);
+  
+  oscP5 = new OscP5(this, 57120);
+  myRemoteLocation = new NetAddress("127.0.0.1", 57120);
 
   
   /* setup framerate speed */
@@ -235,7 +244,7 @@ class SimulationThread implements Runnable{
         // For switching between above and below string
         if (string.aboveString && mainPos > string.location + string.strumDistance/2) {
           string.aboveString = false;
-          if (lateralPos > (string.lowEnd-0.01) && lateralPos < (string.highEnd+0.01)) { 
+          if (lateralPos > (string.lowEnd-0.0) && lateralPos < (string.highEnd+0.01)) { 
             // Adding the 0.01 makes it more reliable, but there are still sometimes bugs when switching to another note
             justMoved = true; 
           }
@@ -285,6 +294,9 @@ class SimulationThread implements Runnable{
         pitchMIDI = 60.4 + (posEE.x + 0.09)/0.18*15.3;
       }
       pitchFreq = pow(2,(pitchMIDI-69)/12) * 440; // Convert MIDI note number into frequency
+      OscMessage myMessage1 = new OscMessage("/hapstrument");
+      myMessage1.add(pitchFreq); 
+      oscP5.send(myMessage1, myRemoteLocation);
     }
     
     
