@@ -183,8 +183,8 @@ void setup(){
   strings[29] = new MusicString(true, pianoTop, pianoMid, 0.075);
   strings[30] = new MusicString(true, pianoTop, pianoMid, 0.065);
   strings[31] = new MusicString(true, pianoTop, pianoMid, 0.053);
-  strings[32] = new MusicString(false, 0.087, 0.075, pianoMid);
-  strings[33] = new MusicString(false, 0.065, 0.053, pianoMid);
+  strings[32] = new MusicString(false, 0.075, 0.087, pianoMid);
+  strings[33] = new MusicString(false, 0.053, 0.065, pianoMid);
   
   oscP5 = new OscP5(this, 57120);
   myRemoteLocation = new NetAddress("127.0.0.1", 57120);
@@ -235,8 +235,8 @@ class SimulationThread implements Runnable{
       
       boolean justMoved = false;
             
-      /* String calculations */
-      for (MusicString string : strings) {
+      // Calculate if we just went through a boundary
+      calc: for (MusicString string : strings) {
         
         float mainPos = string.isVertical ? posEE.x : posEE.y;
         float lateralPos = string.isVertical ? posEE.y : posEE.x;
@@ -244,17 +244,30 @@ class SimulationThread implements Runnable{
         // For switching between above and below string
         if (string.aboveString && mainPos > string.location + string.strumDistance/2) {
           string.aboveString = false;
-          if (lateralPos > (string.lowEnd-0.0) && lateralPos < (string.highEnd+0.01)) { 
-            // Adding the 0.01 makes it more reliable, but there are still sometimes bugs when switching to another note
+          if (lateralPos > (string.lowEnd-0.01) && lateralPos < (string.highEnd+0.01)) { 
+            // Adding the 0.01 makes it more reliable when switching from white to black notes
             justMoved = true; 
+            break calc;
           }
         } else if (!string.aboveString && mainPos < string.location - string.strumDistance/2) {
           string.aboveString = true;
           if (lateralPos > (string.lowEnd-0.01) && lateralPos < (string.highEnd+0.01)) { 
-            justMoved = true; 
+            justMoved = true;
+            break calc;
           }        
-        }
+        } 
+      }
+      
+      // Calculate forces
+      for (MusicString string : strings) {
+        float mainPos = string.isVertical ? posEE.x : posEE.y;
+        float lateralPos = string.isVertical ? posEE.y : posEE.x;
         
+        // If we just crossed a boundary, stop bending all strings, to get rid of bug
+        if (justMoved) {
+          string.aboveString = mainPos < string.location;
+        }
+          
         // For generating force
         float force = 0;
         if(string.aboveString && mainPos > string.location - string.strumDistance && lateralPos > string.lowEnd && lateralPos < string.highEnd){
@@ -264,7 +277,7 @@ class SimulationThread implements Runnable{
           force = (string.location + string.strumDistance - mainPos) * -string.thickness;  
         }
         fWall = fWall.add(new PVector(string.isVertical ? force : 0, string.isVertical ? 0 : force));
-      }
+       }
  //<>//
       fEE = (fWall.copy()).mult(-1);
       fEE.set(graphics_to_device(fEE));
