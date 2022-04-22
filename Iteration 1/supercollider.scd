@@ -1,5 +1,5 @@
 NetAddr.langPort;
-thisProcess.openUDPPort(57120); // attempt to open 1121
+thisProcess.openUDPPort(57120); // attempt to open 57120
 
 (
 OSCdef.new(
@@ -8,7 +8,7 @@ OSCdef.new(
 		arg msg, time, addr, port;
 		~x.do{arg synth; synth.set(\freq, msg[1]);};
 	},
-	'/hapstrument'
+	'/leftHaply'
 );
 )
 
